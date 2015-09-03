@@ -13,6 +13,7 @@ class DeviceAdmin(admin.ModelAdmin):
 	list_filter = ("active", )
 	actions = ("send_message", "send_bulk_message", "prune_devices", "enable", "disable")
 
+
 	def send_message(self, request, queryset):
 		ret = []
 		errors = []
@@ -56,6 +57,8 @@ class DeviceAdmin(admin.ModelAdmin):
 			d.active = False
 			d.save()
 
+	
+
 
 class GCMDeviceAdmin(DeviceAdmin):
 	"""
@@ -70,5 +73,5 @@ class GCMDeviceAdmin(DeviceAdmin):
 
 	list_display = ("__unicode__", "device_id_hex", "user", "active", "date_created")
 
-admin.site.register(APNSDevice, DeviceAdmin)
-admin.site.register(GCMDevice, GCMDeviceAdmin)
+#admin.site.register(APNSDevice, DeviceAdmin)
+#admin.site.register(GCMDevice, GCMDeviceAdmin)

@@ -43,7 +43,7 @@ class GCMDevice(Device):
 	# can make it turn out to be null and such:
 	# http://android-developers.blogspot.co.uk/2011/03/identifying-app-installations.html
 	device_id = HexIntegerField(verbose_name=_("Device ID"), blank=True, null=True, db_index=True,
-		help_text=_("ANDROID_ID / TelephonyManager.getDeviceId() (always as hex)"))
+		help_text=_("ANDROID_ID / TelephonyManager.getDeviceId() (always as hex)"), unique=True)
 	registration_id = models.TextField(verbose_name=_("Registration ID"))
 
 	objects = GCMDeviceManager()
