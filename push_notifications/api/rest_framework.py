@@ -73,7 +73,8 @@ def get_attribute(instance, attrs):
                 # If we raised an Attribute or KeyError here it'd get treated
                 # as an omitted field in `Field.get_attribute()`. Instead we
                 # raise a ValueError to ensure the exception is not masked.
-                raise ValueError('Exception raised in callable attribute "{0}"; original exception was: {1}'.format(attr, exc))
+                raise ValueError(
+                    'Exception raised in callable attribute "{0}"; original exception was: {1}'.format(attr, exc))
 
     return instance
 
@@ -147,6 +148,7 @@ def iter_options(grouped_choices, cutoff=None, cutoff_text=None):
     """
     Helper function for options and option groups in templates.
     """
+
     class StartOptionGroup(object):
         start_option_group = True
         end_option_group = False
@@ -196,6 +198,7 @@ class CreateOnlyDefault(object):
     for create operations, but that do not return any value for update
     operations.
     """
+
     def __init__(self, default):
         self.default = default
 
@@ -574,6 +577,7 @@ class Field(object):
         """
         return unicode_to_repr(representation.field_repr(self))
 
+
 class IntegerField(Field):
     default_error_messages = {
         'invalid': _('A valid integer is required.'),
@@ -608,90 +612,87 @@ class IntegerField(Field):
     def to_representation(self, value):
         return int(value)
 
+
 class HexIntegerField(IntegerField):
-	"""
-	Store an integer represented as a hex string of form "0x01".
-	"""
+    """
+    Store an integer represented as a hex string of form "0x01".
+    """
 
-	def to_internal_value(self, data):
-		data = int(data, 16)
-		return super(HexIntegerField, self).to_internal_value(data)
+    def to_internal_value(self, data):
+        data = int(data, 16)
+        return super(HexIntegerField, self).to_internal_value(data)
 
-	def to_representation(self, value):
-		return value
+    def to_representation(self, value):
+        return value
 
 
 # Serializers
 class DeviceSerializerMixin(ModelSerializer):
-	class Meta:
-		fields = ("name", "registration_id", "device_id", "active", "date_created")
-		read_only_fields = ("date_created", )
+    class Meta:
+        fields = ("name", "registration_id", "device_id", "active", "date_created")
+        read_only_fields = ("date_created",)
 
 
 class APNSDeviceSerializer(ModelSerializer):
+    class Meta(DeviceSerializerMixin.Meta):
+        model = APNSDevice
 
-	class Meta(DeviceSerializerMixin.Meta):
-		model = APNSDevice
-
-	def validate_registration_id(self, value):
-		# iOS device tokens are 256-bit hexadecimal (64 characters)
-
-		if hex_re.match(value) is None or len(value) != 64:
-			raise ValidationError("Registration ID (device token) is invalid")
-
-		return value
+    def validate_registration_id(self, value, source):
+        if hex_re.match(value[source]) is None or len(value[source]) != 64:
+            raise ValidationError("Registration ID (device token) is invalid")
+        return value
 
 
 class GCMDeviceSerializer(ModelSerializer):
-	device_id = HexIntegerField(
-		help_text="ANDROID_ID / TelephonyManager.getDeviceId() (e.g: 0x01)",
-		style={'input_type': 'text'},
-		required=False
-	)
+    device_id = HexIntegerField(
+        help_text="ANDROID_ID / TelephonyManager.getDeviceId() (e.g: 0x01)",
+        style={'input_type': 'text'},
+        required=False
+    )
 
-	class Meta(DeviceSerializerMixin.Meta):
-		model = GCMDevice
+    class Meta(DeviceSerializerMixin.Meta):
+        model = GCMDevice
 
 
 # Permissions
 class IsOwner(permissions.BasePermission):
-	def has_object_permission(self, request, view, obj):
-		# must be the owner to view the object
-		return obj.user == request.user
+    def has_object_permission(self, request, view, obj):
+        # must be the owner to view the object
+        return obj.user == request.user
 
 
 # Mixins
 class DeviceViewSetMixin(object):
-	lookup_field = "registration_id"
+    lookup_field = "registration_id"
 
-	def perform_create(self, serializer):
-		if self.request.user.is_authenticated():
-			serializer.save(user=self.request.user)
-		return super(DeviceViewSetMixin, self).perform_create(serializer)
+    def perform_create(self, serializer):
+        if self.request.user.is_authenticated():
+            serializer.save(user=self.request.user)
+        return super(DeviceViewSetMixin, self).perform_create(serializer)
 
 
 class AuthorizedMixin(object):
-	permission_classes = (permissions.IsAuthenticated, IsOwner)
+    permission_classes = (permissions.IsAuthenticated, IsOwner)
 
-	def get_queryset(self):
-		# filter all devices to only those belonging to the current user
-		return self.queryset.filter(user=self.request.user)
+    def get_queryset(self):
+        # filter all devices to only those belonging to the current user
+        return self.queryset.filter(user=self.request.user)
 
 
 # ViewSets
 class APNSDeviceViewSet(DeviceViewSetMixin, ModelViewSet):
-	queryset = APNSDevice.objects.all()
-	serializer_class = APNSDeviceSerializer
+    queryset = APNSDevice.objects.all()
+    serializer_class = APNSDeviceSerializer
 
 
 class APNSDeviceAuthorizedViewSet(AuthorizedMixin, APNSDeviceViewSet):
-	pass
+    pass
 
 
 class GCMDeviceViewSet(DeviceViewSetMixin, ModelViewSet):
-	queryset = GCMDevice.objects.all()
-	serializer_class = GCMDeviceSerializer
+    queryset = GCMDevice.objects.all()
+    serializer_class = GCMDeviceSerializer
 
 
 class GCMDeviceAuthorizedViewSet(AuthorizedMixin, GCMDeviceViewSet):
-	pass
+    pass
